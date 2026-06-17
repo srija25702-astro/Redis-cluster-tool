@@ -1,0 +1,127 @@
+#!/bin/bash
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANSIBLE_DIR="$SCRIPT_DIR/ansible"
+
+check_prerequisites() {
+  local missing=0
+  local runtime_found="" runtime_version=""
+
+  if command -v podman >/dev/null 2>&1; then
+    runtime_found="Podman"
+    runtime_version="$(podman --version | awk '{print $3}')"
+  elif command -v docker >/dev/null 2>&1; then
+    runtime_found="Docker"
+    runtime_version="$(docker --version | awk '{print $3}' | tr -d ',')"
+  fi
+
+  if [ -n "$runtime_found" ]; then
+    echo "✓ $runtime_found $runtime_version found"
+  else
+    echo "✗ Container runtime not found (Docker or Podman)"
+    echo "  Install Podman: https://podman.io/docs/installation"
+    echo "  Install Docker: https://docs.docker.com/engine/install/"
+    missing=1
+  fi
+
+  if command -v ansible-playbook >/dev/null 2>&1; then
+    local ver major minor
+    ver="$(ansible-playbook --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+    major="$(echo "$ver" | cut -d. -f1)"
+    minor="$(echo "$ver" | cut -d. -f2)"
+    if [ "$major" -gt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -ge 14 ]; }; then
+      echo "✓ Ansible $ver found"
+    else
+      echo "✗ Ansible $ver found, but version 2.14+ is required"
+      echo "  Install: pip install --upgrade ansible"
+      missing=1
+    fi
+  else
+    echo "✗ Ansible not found"
+    echo "  Install: pip install ansible (or use your OS package manager)"
+    missing=1
+  fi
+
+  if [ "$missing" -eq 1 ]; then
+    echo "Please install the missing dependencies and retry."
+    exit 1
+  fi
+  echo "Proceeding..."
+}
+
+check_prerequisites
+
+cd "$ANSIBLE_DIR" || { echo "Error: ansible directory not found at $ANSIBLE_DIR"; exit 1; }
+
+CMD="${1:-}"
+shift || true
+
+# Parse remaining flags
+VERSION="7.0.15"
+MASTERS="3"
+REPLICAS_PER_MASTER="1"
+KEYS="1000"
+TARGET_VERSION="7.2.6"
+STRATEGY="rolling"
+FULL=""
+SUBCMD=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    seed|verify) SUBCMD="$1"; shift ;;
+    --version) VERSION="$2"; shift 2 ;;
+    --masters) MASTERS="$2"; shift 2 ;;
+    --replicas-per-master) REPLICAS_PER_MASTER="$2"; shift 2 ;;
+    --keys) KEYS="$2"; shift 2 ;;
+    --target-version) TARGET_VERSION="$2"; shift 2 ;;
+    --strategy) STRATEGY="$2"; shift 2 ;;
+    --full) FULL="true"; shift ;;
+    *) shift ;;
+  esac
+done
+
+case "$CMD" in
+  provision)
+    echo "Provisioning Redis $VERSION — $MASTERS masters, $REPLICAS_PER_MASTER replica(s) per master"
+    ansible-playbook -i inventory/hosts.ini playbooks/provision.yml \
+      -e "redis_version=$VERSION" && \
+    ansible-playbook -i inventory/hosts.ini playbooks/create_cluster.yml \
+      -e "redis_version=$VERSION masters=$MASTERS replicas_per_master=$REPLICAS_PER_MASTER" && \
+    ansible-playbook -i inventory/hosts.ini playbooks/status.yml
+    ;;
+  data)
+    if [ "$SUBCMD" == "seed" ]; then
+      echo "Seeding $KEYS keys..."
+      ansible-playbook -i inventory/hosts.ini playbooks/data_seed.yml \
+        -e "num_keys=$KEYS"
+    elif [ "$SUBCMD" == "verify" ]; then
+      ansible-playbook -i inventory/hosts.ini playbooks/data_verify.yml \
+        -e "num_keys=$KEYS"
+    else
+      echo "Usage: redis-tool data {seed|verify} [--keys N]"
+      exit 1
+    fi
+    ;;
+  status)
+    ansible-playbook -i inventory/hosts.ini playbooks/status.yml
+    ;;
+  upgrade)
+    echo "Rolling upgrade to Redis $TARGET_VERSION (strategy: $STRATEGY)"
+    ansible-playbook -i inventory/hosts.ini playbooks/upgrade.yml \
+      -e "target_version=$TARGET_VERSION"
+    ;;
+  verify)
+    ansible-playbook -i inventory/hosts.ini playbooks/verify.yml
+    ;;
+  *)
+    echo "Usage:"
+    echo "  redis-tool provision --version 7.0.15 --masters 3 --replicas-per-master 1"
+    echo "  redis-tool data seed --keys 1000"
+    echo "  redis-tool data verify"
+    echo "  redis-tool status"
+    echo "  redis-tool upgrade --target-version 7.2.6 --strategy rolling"
+    echo "  redis-tool verify --full"
+    exit 1
+    ;;
+esac

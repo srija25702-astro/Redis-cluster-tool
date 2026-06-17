@@ -1,0 +1,287 @@
+---
+- name: Rolling Upgrade - Pre-flight
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  any_errors_fatal: true
+  vars:
+    target_version: "7.2.6"
+  tasks:
+    - name: Check cluster is healthy
+      shell: |
+        state=$(redis-cli -p 6379 CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r ')
+        if [ "$state" != "ok" ]; then echo "FAIL: cluster_state=$state"; exit 1; fi
+        echo "cluster_state: ok"
+      args:
+        executable: /bin/bash
+
+    - name: Verify all nodes reachable
+      shell: |
+        count=$(redis-cli -p 6379 CLUSTER NODES | wc -l)
+        if [ "$count" -ne 6 ]; then echo "FAIL: only $count nodes found"; exit 1; fi
+        echo "All 6 nodes reachable"
+      args:
+        executable: /bin/bash
+
+    - name: Check current version differs from target
+      shell: |
+        ver=$(redis-server --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        if [ "$ver" = "7.2.6" ]; then echo "Already on 7.2.6, nothing to do"; exit 1; fi
+        echo "Current version: $ver — will upgrade to 7.2.6"
+      args:
+        executable: /bin/bash
+
+    - name: Pre-upgrade data verify
+      shell: |
+        missing=0
+        mismatched=0
+        for i in $(seq -w 1 1000); do
+          key="key:$i"
+          expected=$(echo -n "$key" | sha256sum | awk '{print $1}')
+          actual=$(redis-cli -c GET "$key")
+          if [ -z "$actual" ]; then
+            missing=$((missing+1))
+          elif [ "$actual" != "$expected" ]; then
+            mismatched=$((mismatched+1))
+          fi
+        done
+        if [ "$missing" -eq 0 ] && [ "$mismatched" -eq 0 ]; then
+          echo "PRE-UPGRADE VERIFY: PASS - 1000/1000 keys verified"
+        else
+          echo "PRE-UPGRADE VERIFY: FAIL - $missing keys missing, $mismatched values mismatched"
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
+      register: pre_verify
+
+    - debug:
+        msg: "{{ pre_verify.stdout }}"
+
+- name: Rolling Upgrade - Replicas First
+  hosts: redis-node-4,redis-node-5,redis-node-6
+  become: yes
+  gather_facts: no
+  serial: 1
+  any_errors_fatal: true
+  vars:
+    target_version: "7.2.6"
+  tasks:
+    - name: Stop Redis
+      shell: |
+        pkill -f redis-server || true
+        sleep 2
+        pkill -9 -f redis-server || true
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+
+    - name: Wait for port to free
+      wait_for:
+        port: 6379
+        state: stopped
+        timeout: 15
+
+    - name: Install Redis 7.2.6
+      include_role:
+        name: redis
+      vars:
+        redis_version: "{{ target_version }}"
+
+    - name: Wait for replica to rejoin cluster
+      shell: |
+        for i in $(seq 1 24); do
+          result=$(redis-cli -p 6379 CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r ')
+          if [ "$result" = "ok" ]; then echo "rejoined"; exit 0; fi
+          sleep 5
+        done
+        echo "timeout waiting for rejoin"; exit 1
+      args:
+        executable: /bin/bash
+
+    - name: Wait for replica sync
+      shell: |
+        for i in $(seq 1 24); do
+          status=$(redis-cli -p 6379 INFO replication | grep master_link_status | cut -d: -f2 | tr -d '\r ')
+          if [ "$status" = "up" ]; then echo "sync complete"; exit 0; fi
+          sleep 5
+        done
+        echo "timeout waiting for sync"; exit 1
+      args:
+        executable: /bin/bash
+
+    - name: Verify cluster still ok after replica upgrade
+      shell: |
+        state=$(redis-cli -h 10.10.0.11 -p 6379 CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r ')
+        if [ "$state" != "ok" ]; then echo "FAIL: cluster_state=$state"; exit 1; fi
+        echo "cluster: ok"
+      args:
+        executable: /bin/bash
+      register: post_state
+
+    - name: Print replica progress
+      shell: |
+        node_ip=$(hostname -I | awk '{print $1}')
+        echo "[replica upgraded] $node_ip:6379 v7.2.6 — cluster: ok"
+      args:
+        executable: /bin/bash
+      register: progress
+
+    - debug:
+        msg: "{{ progress.stdout }}"
+
+- name: Rolling Upgrade - Masters with Failover
+  hosts: redis-node-1,redis-node-2,redis-node-3
+  become: yes
+  gather_facts: no
+  serial: 1
+  any_errors_fatal: true
+  vars:
+    target_version: "7.2.6"
+  tasks:
+    - name: Get this master node ID
+      shell: redis-cli -p 6379 CLUSTER MYID | tr -d '\r'
+      args:
+        executable: /bin/bash
+      register: master_id
+
+    - name: Find replica IP for this master
+      shell: |
+        redis-cli -p 6379 CLUSTER NODES | grep slave | awk -v id="{{ master_id.stdout }}" '$4==id {print $2}' | cut -d@ -f1 | cut -d: -f1
+      args:
+        executable: /bin/bash
+      register: replica_ip
+
+    - name: Trigger CLUSTER FAILOVER on replica
+      shell: redis-cli -h "{{ replica_ip.stdout }}" -p 6379 CLUSTER FAILOVER
+      args:
+        executable: /bin/bash
+      register: failover_result
+      failed_when: "'OK' not in failover_result.stdout"
+
+    - name: Wait for this node to become replica after failover
+      shell: |
+        for i in $(seq 1 24); do
+          role=$(redis-cli -p 6379 INFO replication | grep ^role | cut -d: -f2 | tr -d '\r ')
+          if [ "$role" = "slave" ]; then echo "now replica"; exit 0; fi
+          sleep 5
+        done
+        echo "timeout waiting for demotion"; exit 1
+      args:
+        executable: /bin/bash
+
+    - name: Stop Redis on old master (now replica)
+      shell: |
+        pkill -f redis-server || true
+        sleep 2
+        pkill -9 -f redis-server || true
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+
+    - name: Wait for port to free
+      wait_for:
+        port: 6379
+        state: stopped
+        timeout: 15
+
+    - name: Install Redis 7.2.6
+      include_role:
+        name: redis
+      vars:
+        redis_version: "{{ target_version }}"
+
+    - name: Wait for node to rejoin as replica
+      shell: |
+        for i in $(seq 1 24); do
+          role=$(redis-cli -p 6379 INFO replication | grep ^role | cut -d: -f2 | tr -d '\r ')
+          if [ "$role" = "slave" ]; then echo "rejoined as replica"; exit 0; fi
+          sleep 5
+        done
+        echo "timeout waiting for rejoin"; exit 1
+      args:
+        executable: /bin/bash
+
+    - name: Wait for replication sync
+      shell: |
+        for i in $(seq 1 24); do
+          status=$(redis-cli -p 6379 INFO replication | grep master_link_status | cut -d: -f2 | tr -d '\r ')
+          if [ "$status" = "up" ]; then echo "sync complete"; exit 0; fi
+          sleep 5
+        done
+        echo "timeout waiting for sync"; exit 1
+      args:
+        executable: /bin/bash
+
+    - name: Verify cluster still ok after master upgrade
+      shell: |
+        state=$(redis-cli -h "{{ replica_ip.stdout }}" -p 6379 CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r ')
+        if [ "$state" != "ok" ]; then echo "FAIL: cluster_state=$state"; exit 1; fi
+        echo "cluster: ok"
+      args:
+        executable: /bin/bash
+
+    - name: Print master progress
+      shell: |
+        node_ip=$(hostname -I | awk '{print $1}')
+        echo "[master upgraded] $node_ip:6379 v7.2.6 — cluster: ok"
+      args:
+        executable: /bin/bash
+      register: progress
+
+    - debug:
+        msg: "{{ progress.stdout }}"
+
+- name: Rolling Upgrade - Post-upgrade Verification
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  any_errors_fatal: true
+  vars:
+    target_version: "7.2.6"
+  tasks:
+    - name: Post-upgrade data verify
+      shell: |
+        missing=0
+        mismatched=0
+        for i in $(seq -w 1 1000); do
+          key="key:$i"
+          expected=$(echo -n "$key" | sha256sum | awk '{print $1}')
+          actual=$(redis-cli -c GET "$key")
+          if [ -z "$actual" ]; then
+            missing=$((missing+1))
+          elif [ "$actual" != "$expected" ]; then
+            mismatched=$((mismatched+1))
+          fi
+        done
+        if [ "$missing" -eq 0 ] && [ "$mismatched" -eq 0 ]; then
+          echo "POST-UPGRADE VERIFY: PASS - 1000/1000 keys verified"
+        else
+          echo "POST-UPGRADE VERIFY: FAIL - $missing keys missing, $mismatched values mismatched"
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
+      register: post_verify
+
+    - debug:
+        msg: "{{ post_verify.stdout }}"
+
+    - name: Check all nodes on new version
+      shell: |
+        redis-cli -p 6379 CLUSTER NODES | while read -r line; do
+          ip=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f1)
+          port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f2)
+          ver=$(redis-cli -h "$ip" -p "$port" INFO server | grep redis_version | cut -d: -f2 | tr -d '\r')
+          echo "$ip:$port -> v$ver"
+        done
+      args:
+        executable: /bin/bash
+      register: version_check
+
+    - debug:
+        msg: "{{ version_check.stdout_lines }}"
+
+    - name: Final success message
+      debug:
+        msg: "UPGRADE COMPLETE — all nodes on v{{ target_version }}, data integrity verified"

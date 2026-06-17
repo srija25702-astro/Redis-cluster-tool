@@ -1,0 +1,44 @@
+- name: Pre-verify Node Connectivity Check
+  hosts: redis_cluster
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Check Redis connectivity
+      shell: redis-cli -p 6379 PING
+      register: ping_result
+      changed_when: false
+
+    - name: Show per-node connectivity
+      debug:
+        msg: "{{ inventory_hostname }} ({{ ansible_host }}) -> {{ ping_result.stdout }}"
+
+- name: Verify Redis Cluster Data (1000 Keys)
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Verify all 1000 deterministic keys
+      shell: |
+        missing=0
+        mismatched=0
+        for i in $(seq -w 1 {{ num_keys | default(1000) }}); do
+          key="key:$i"
+          expected=$(echo -n "$key" | sha256sum | awk '{print $1}')
+          actual=$(redis-cli -c GET "$key")
+          if [ -z "$actual" ]; then
+            missing=$((missing+1))
+          elif [ "$actual" != "$expected" ]; then
+            mismatched=$((mismatched+1))
+          fi
+        done
+        if [ "$missing" -eq 0 ] && [ "$mismatched" -eq 0 ]; then
+          echo "PASS - {{ num_keys | default(1000) }}/{{ num_keys | default(1000) }} keys verified"
+        else
+          echo "FAIL - $missing keys missing, $mismatched values mismatched"
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
+      register: verify_result
+    - debug:
+        var: verify_result.stdout

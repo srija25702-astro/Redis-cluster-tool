@@ -1,0 +1,6 @@
+- name: Provision Redis Cluster Nodes
+  hosts: redis_cluster
+  become: yes
+
+  roles:
+    - redis

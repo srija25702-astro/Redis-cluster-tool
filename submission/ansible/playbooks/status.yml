@@ -1,0 +1,53 @@
+- name: Cluster Node Connectivity Check
+  hosts: redis_cluster
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Check Redis connectivity
+      shell: redis-cli -p 6379 PING
+      register: ping_result
+      changed_when: false
+
+    - name: Show per-node connectivity
+      debug:
+        msg: "{{ inventory_hostname }} ({{ ansible_host }}) -> {{ ping_result.stdout }}"
+
+- name: Redis Cluster Status
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Print full cluster status
+      shell: |
+        PORT=6379
+        echo "Cluster State: $(redis-cli -p $PORT CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r')"
+        echo ""
+        echo "MASTERS"
+        redis-cli -p $PORT CLUSTER NODES | grep master | while read -r line; do
+          ip_port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1)
+          ip=$(echo "$ip_port" | cut -d: -f1)
+          port=$(echo "$ip_port" | cut -d: -f2)
+          slots=$(echo "$line" | awk '{for(i=9;i<=NF;i++) printf "%s ", $i}' | sed 's/ $//')
+          version=$(redis-cli -h "$ip" -p "$port" INFO server | grep redis_version: | cut -d: -f2 | tr -d '\r')
+          keys=$(redis-cli -h "$ip" -p "$port" DBSIZE | tr -d '\r')
+          mem=$(redis-cli -h "$ip" -p "$port" INFO memory | grep used_memory_human: | cut -d: -f2 | tr -d '\r')
+          echo " $ip:$port [master] v$version slots: $slots keys: $keys mem: $mem"
+        done
+        echo ""
+        echo "REPLICAS"
+        redis-cli -p $PORT CLUSTER NODES | grep slave | while read -r line; do
+          ip_port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1)
+          ip=$(echo "$ip_port" | cut -d: -f1)
+          port=$(echo "$ip_port" | cut -d: -f2)
+          master_id=$(echo "$line" | awk '{print $4}')
+          master_ip_port=$(redis-cli -p $PORT CLUSTER NODES | awk -v id="$master_id" '$1==id {print $2}' | cut -d@ -f1)
+          version=$(redis-cli -h "$ip" -p "$port" INFO server | grep redis_version: | cut -d: -f2 | tr -d '\r')
+          mem=$(redis-cli -h "$ip" -p "$port" INFO memory | grep used_memory_human: | cut -d: -f2 | tr -d '\r')
+          echo " $ip:$port [replica] v$version replicating: $master_ip_port mem: $mem"
+        done
+      args:
+        executable: /bin/bash
+      register: cluster_status
+    - name: Show status
+      debug:
+        msg: "{{ cluster_status.stdout_lines }}"

@@ -1,0 +1,23 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+    openssh-server \
+    python3 \
+    sudo && \
+    mkdir /var/run/sshd
+
+RUN mkdir -p /root/.ssh
+
+COPY id_rsa.pub /root/.ssh/authorized_keys
+
+RUN chmod 700 /root/.ssh && \
+    chmod 600 /root/.ssh/authorized_keys
+
+RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
+    echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+EXPOSE 22
+
+CMD ["/usr/sbin/sshd","-D"]

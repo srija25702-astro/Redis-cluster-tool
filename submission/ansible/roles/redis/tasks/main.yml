@@ -1,0 +1,74 @@
+- name: Install build dependencies
+  apt:
+    name:
+      - build-essential
+      - tcl
+      - wget
+      - tar
+    state: present
+    update_cache: yes
+
+- name: Download Redis {{ redis_version }}
+  get_url:
+    url: http://download.redis.io/releases/redis-{{ redis_version }}.tar.gz
+    dest: /tmp/redis-{{ redis_version }}.tar.gz
+
+- name: Extract Redis
+  unarchive:
+    src: /tmp/redis-{{ redis_version }}.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Build Redis
+  shell: make
+  args:
+    chdir: /tmp/redis-{{ redis_version }}
+
+- name: Install Redis binaries
+  shell: make install
+  args:
+    chdir: /tmp/redis-{{ redis_version }}
+
+- name: Create redis group
+  group:
+    name: redis
+    state: present
+
+- name: Create redis user
+  user:
+    name: redis
+    group: redis
+    system: yes
+    shell: /usr/sbin/nologin
+
+- name: Create redis directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: '0755'
+  loop:
+    - /etc/redis
+    - /var/lib/redis
+
+- name: Deploy Redis cluster config
+  template:
+    src: redis.conf.j2
+    dest: /etc/redis/redis.conf
+    owner: redis
+    group: redis
+    mode: '0644'
+
+- name: Stop Redis safely
+  shell: pkill -f redis-server || true
+  ignore_errors: yes
+
+- name: Wait for port to free
+  wait_for:
+    port: 6379
+    state: stopped
+    timeout: 10
+
+- name: Start Redis with cluster config
+  shell: nohup redis-server /etc/redis/redis.conf > /tmp/redis.log 2>&1 &

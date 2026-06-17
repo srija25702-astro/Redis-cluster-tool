@@ -1,0 +1,64 @@
+✓ Podman 4.9.3 found
+✓ Ansible 2.16.3 found
+Proceeding...
+
+PLAY [Cluster Node Connectivity Check] *****************************************
+
+TASK [Check Redis connectivity] ************************************************
+ok: [redis-node-2]
+ok: [redis-node-3]
+ok: [redis-node-4]
+ok: [redis-node-5]
+ok: [redis-node-1]
+ok: [redis-node-6]
+
+TASK [Show per-node connectivity] **********************************************
+ok: [redis-node-1] => {
+    "msg": "redis-node-1 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-2] => {
+    "msg": "redis-node-2 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-3] => {
+    "msg": "redis-node-3 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-4] => {
+    "msg": "redis-node-4 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-5] => {
+    "msg": "redis-node-5 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-6] => {
+    "msg": "redis-node-6 (127.0.0.1) -> PONG"
+}
+
+PLAY [Redis Cluster Status] ****************************************************
+
+TASK [Print full cluster status] ***********************************************
+changed: [redis-node-1]
+
+TASK [Show status] *************************************************************
+ok: [redis-node-1] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 333 mem: 2.01M",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 324 mem: 2.02M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 343 mem: 2.05M",
+        "",
+        "REPLICAS",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.95M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.93M",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.96M"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-2               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-3               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-4               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-5               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-6               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

@@ -1,0 +1,494 @@
+✓ Podman 4.9.3 found
+✓ Ansible 2.16.3 found
+Proceeding...
+Rolling upgrade to Redis 7.2.6 (strategy: rolling)
+
+PLAY [Rolling Upgrade - Pre-flight] ********************************************
+
+TASK [Check cluster is healthy] ************************************************
+changed: [redis-node-1]
+
+TASK [Verify all nodes reachable] **********************************************
+changed: [redis-node-1]
+
+TASK [Check current version differs from target] *******************************
+changed: [redis-node-1]
+
+TASK [Pre-upgrade data verify] *************************************************
+changed: [redis-node-1]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-1] => {
+    "msg": "PRE-UPGRADE VERIFY: PASS - 1000/1000 keys verified"
+}
+
+PLAY [Rolling Upgrade - Replicas First] ****************************************
+
+TASK [Stop Redis] **************************************************************
+fatal: [redis-node-4]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.011838", "end": "2026-06-17 05:12:48.951480", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:12:48.939642", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-4]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-4]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-4]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-4]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-4]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-4]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-4]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-4]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-4] => (item=/etc/redis)
+ok: [redis-node-4] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-4]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-4]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.008903", "end": "2026-06-17 05:15:47.973166", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:15:47.964263", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-4]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-4]
+
+TASK [Wait for replica to rejoin cluster] **************************************
+changed: [redis-node-4]
+
+TASK [Wait for replica sync] ***************************************************
+changed: [redis-node-4]
+
+TASK [Verify cluster still ok after replica upgrade] ***************************
+changed: [redis-node-4]
+
+TASK [Print replica progress] **************************************************
+changed: [redis-node-4]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-4] => {
+    "msg": "[replica upgraded] 10.10.0.14:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Replicas First] ****************************************
+
+TASK [Stop Redis] **************************************************************
+fatal: [redis-node-5]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.009590", "end": "2026-06-17 05:16:09.640990", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:16:09.631400", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-5]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-5]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-5]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-5]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-5]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-5]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-5]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-5]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-5] => (item=/etc/redis)
+ok: [redis-node-5] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-5]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-5]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.008875", "end": "2026-06-17 05:19:32.234073", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:19:32.225198", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-5]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-5]
+
+TASK [Wait for replica to rejoin cluster] **************************************
+changed: [redis-node-5]
+
+TASK [Wait for replica sync] ***************************************************
+changed: [redis-node-5]
+
+TASK [Verify cluster still ok after replica upgrade] ***************************
+changed: [redis-node-5]
+
+TASK [Print replica progress] **************************************************
+changed: [redis-node-5]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-5] => {
+    "msg": "[replica upgraded] 10.10.0.15:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Replicas First] ****************************************
+
+TASK [Stop Redis] **************************************************************
+fatal: [redis-node-6]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.011520", "end": "2026-06-17 05:19:53.722364", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:19:53.710844", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-6]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-6]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-6]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-6]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-6]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-6]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-6]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-6]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-6] => (item=/etc/redis)
+ok: [redis-node-6] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-6]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-6]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.007449", "end": "2026-06-17 05:23:10.941496", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:23:10.934047", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-6]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-6]
+
+TASK [Wait for replica to rejoin cluster] **************************************
+changed: [redis-node-6]
+
+TASK [Wait for replica sync] ***************************************************
+changed: [redis-node-6]
+
+TASK [Verify cluster still ok after replica upgrade] ***************************
+changed: [redis-node-6]
+
+TASK [Print replica progress] **************************************************
+changed: [redis-node-6]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-6] => {
+    "msg": "[replica upgraded] 10.10.0.16:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Masters with Failover] *********************************
+
+TASK [Get this master node ID] *************************************************
+changed: [redis-node-1]
+
+TASK [Find replica IP for this master] *****************************************
+changed: [redis-node-1]
+
+TASK [Trigger CLUSTER FAILOVER on replica] *************************************
+changed: [redis-node-1]
+
+TASK [Wait for this node to become replica after failover] *********************
+changed: [redis-node-1]
+
+TASK [Stop Redis on old master (now replica)] **********************************
+fatal: [redis-node-1]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.010028", "end": "2026-06-17 05:23:39.257838", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:23:39.247810", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-1]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-1]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-1]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-1]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-1]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-1]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-1]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-1]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-1] => (item=/etc/redis)
+ok: [redis-node-1] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-1]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-1]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.105479", "end": "2026-06-17 05:27:33.181684", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:27:33.076205", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-1]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-1]
+
+TASK [Wait for node to rejoin as replica] **************************************
+changed: [redis-node-1]
+
+TASK [Wait for replication sync] ***********************************************
+changed: [redis-node-1]
+
+TASK [Verify cluster still ok after master upgrade] ****************************
+changed: [redis-node-1]
+
+TASK [Print master progress] ***************************************************
+changed: [redis-node-1]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-1] => {
+    "msg": "[master upgraded] 10.10.0.11:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Masters with Failover] *********************************
+
+TASK [Get this master node ID] *************************************************
+changed: [redis-node-2]
+
+TASK [Find replica IP for this master] *****************************************
+changed: [redis-node-2]
+
+TASK [Trigger CLUSTER FAILOVER on replica] *************************************
+changed: [redis-node-2]
+
+TASK [Wait for this node to become replica after failover] *********************
+changed: [redis-node-2]
+
+TASK [Stop Redis on old master (now replica)] **********************************
+fatal: [redis-node-2]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.011880", "end": "2026-06-17 05:28:01.571765", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:28:01.559885", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-2]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-2]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-2]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-2]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-2]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-2]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-2]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-2]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-2] => (item=/etc/redis)
+ok: [redis-node-2] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-2]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-2]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.008635", "end": "2026-06-17 05:31:37.052381", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:31:37.043746", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-2]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-2]
+
+TASK [Wait for node to rejoin as replica] **************************************
+changed: [redis-node-2]
+
+TASK [Wait for replication sync] ***********************************************
+changed: [redis-node-2]
+
+TASK [Verify cluster still ok after master upgrade] ****************************
+changed: [redis-node-2]
+
+TASK [Print master progress] ***************************************************
+changed: [redis-node-2]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-2] => {
+    "msg": "[master upgraded] 10.10.0.12:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Masters with Failover] *********************************
+
+TASK [Get this master node ID] *************************************************
+changed: [redis-node-3]
+
+TASK [Find replica IP for this master] *****************************************
+changed: [redis-node-3]
+
+TASK [Trigger CLUSTER FAILOVER on replica] *************************************
+changed: [redis-node-3]
+
+TASK [Wait for this node to become replica after failover] *********************
+changed: [redis-node-3]
+
+TASK [Stop Redis on old master (now replica)] **********************************
+fatal: [redis-node-3]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true\nsleep 2\npkill -9 -f redis-server || true\n", "delta": "0:00:00.011088", "end": "2026-06-17 05:32:04.426426", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:32:04.415338", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Wait for port to free] ***************************************************
+ok: [redis-node-3]
+
+TASK [Install Redis 7.2.6] *****************************************************
+
+TASK [redis : Install build dependencies] **************************************
+ok: [redis-node-3]
+
+TASK [redis : Download Redis 7.2.6] ********************************************
+changed: [redis-node-3]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-3]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-3]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-3]
+
+TASK [redis : Create redis group] **********************************************
+ok: [redis-node-3]
+
+TASK [redis : Create redis user] ***********************************************
+ok: [redis-node-3]
+
+TASK [redis : Create redis directories] ****************************************
+ok: [redis-node-3] => (item=/etc/redis)
+ok: [redis-node-3] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+ok: [redis-node-3]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-3]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.007213", "end": "2026-06-17 05:36:10.520805", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 05:36:10.513592", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-3]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-3]
+
+TASK [Wait for node to rejoin as replica] **************************************
+changed: [redis-node-3]
+
+TASK [Wait for replication sync] ***********************************************
+changed: [redis-node-3]
+
+TASK [Verify cluster still ok after master upgrade] ****************************
+changed: [redis-node-3]
+
+TASK [Print master progress] ***************************************************
+changed: [redis-node-3]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-3] => {
+    "msg": "[master upgraded] 10.10.0.13:6379 v7.2.6 — cluster: ok"
+}
+
+PLAY [Rolling Upgrade - Post-upgrade Verification] *****************************
+
+TASK [Post-upgrade data verify] ************************************************
+changed: [redis-node-1]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-1] => {
+    "msg": "POST-UPGRADE VERIFY: PASS - 1000/1000 keys verified"
+}
+
+TASK [Check all nodes on new version] ******************************************
+changed: [redis-node-1]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-1] => {
+    "msg": [
+        "10.10.0.12:6379 -> v7.2.6",
+        "10.10.0.16:6379 -> v7.2.6",
+        "10.10.0.11:6379 -> v7.2.6",
+        "10.10.0.13:6379 -> v7.2.6",
+        "10.10.0.14:6379 -> v7.2.6",
+        "10.10.0.15:6379 -> v7.2.6"
+    ]
+}
+
+TASK [Final success message] ***************************************************
+ok: [redis-node-1] => {
+    "msg": "UPGRADE COMPLETE — all nodes on v7.2.6, data integrity verified"
+}
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=33   changed=21   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+redis-node-2               : ok=23   changed=15   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+redis-node-3               : ok=23   changed=15   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+redis-node-4               : ok=19   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+redis-node-5               : ok=19   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+redis-node-6               : ok=19   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

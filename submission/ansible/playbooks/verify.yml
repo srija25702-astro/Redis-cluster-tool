@@ -1,0 +1,92 @@
+- name: Cluster Node Connectivity Check
+  hosts: redis_cluster
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Check Redis connectivity
+      shell: redis-cli -p 6379 PING
+      register: ping_result
+      changed_when: false
+
+    - name: Show per-node connectivity
+      debug:
+        msg: "{{ inventory_hostname }} ({{ ansible_host }}) -> {{ ping_result.stdout }}"
+
+- name: Full Cluster Verification
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Run full verification
+      shell: |
+        echo "=== Full Cluster Verification ==="
+        echo ""
+        PASS=0
+        FAIL=0
+        missing=0; mismatched=0
+        for i in $(seq -w 1 1000); do
+          key="key:$i"
+          expected=$(echo -n "$key" | sha256sum | awk '{print $1}')
+          actual=$(redis-cli -c GET "$key")
+          if [ -z "$actual" ]; then missing=$((missing+1))
+          elif [ "$actual" != "$expected" ]; then mismatched=$((mismatched+1)); fi
+        done
+        if [ "$missing" -eq 0 ] && [ "$mismatched" -eq 0 ]; then
+          echo "[PASS] Data integrity: 1000/1000 keys verified"
+          PASS=$((PASS+1))
+        else
+          echo "[FAIL] Data integrity: $missing missing, $mismatched mismatched"
+          FAIL=$((FAIL+1))
+        fi
+        versions=$(redis-cli -p 6379 CLUSTER NODES | while read -r line; do
+          ip=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f1)
+          port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f2)
+          redis-cli -h "$ip" -p "$port" INFO server | grep redis_version | cut -d: -f2 | tr -d '\r'
+        done | sort -u)
+        count=$(echo "$versions" | wc -l)
+        if [ "$count" -eq 1 ]; then
+          echo "[PASS] Version consistency: all nodes on v$versions"
+          PASS=$((PASS+1))
+        else
+          echo "[FAIL] Version consistency: mixed versions"
+          FAIL=$((FAIL+1))
+        fi
+        total_slots=$(redis-cli -p 6379 CLUSTER INFO | grep cluster_slots_ok | cut -d: -f2 | tr -d '\r ')
+        master_count=$(redis-cli -p 6379 CLUSTER NODES | grep master | wc -l)
+        replica_count=$(redis-cli -p 6379 CLUSTER NODES | grep slave | wc -l)
+        if [ "$total_slots" -eq 16384 ] && [ "$master_count" -ge 3 ] && [ "$replica_count" -ge 3 ]; then
+          echo "[PASS] Topology: $master_count masters, $replica_count replicas, $total_slots/16384 slots"
+          PASS=$((PASS+1))
+        else
+          echo "[FAIL] Topology: slots=$total_slots masters=$master_count replicas=$replica_count"
+          FAIL=$((FAIL+1))
+        fi
+        state=$(redis-cli -p 6379 CLUSTER INFO | grep cluster_state | cut -d: -f2 | tr -d '\r ')
+        if [ "$state" = "ok" ]; then
+          echo "[PASS] Cluster state: ok"
+          PASS=$((PASS+1))
+        else
+          echo "[FAIL] Cluster state: $state"
+          FAIL=$((FAIL+1))
+        fi
+        lag_fail=0
+        while read -r line; do
+          ip=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f1)
+          port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1 | cut -d: -f2)
+          status=$(redis-cli -h "$ip" -p "$port" INFO replication | grep master_link_status | cut -d: -f2 | tr -d '\r ')
+          if [ "$status" != "up" ]; then lag_fail=$((lag_fail+1)); fi
+        done < <(redis-cli -p 6379 CLUSTER NODES | grep slave)
+        if [ "$lag_fail" -eq 0 ]; then
+          echo "[PASS] Replication lag: all replicas master_link_status:up"
+          PASS=$((PASS+1))
+        else
+          echo "[FAIL] Replication lag: $lag_fail replicas not in sync"
+          FAIL=$((FAIL+1))
+        fi
+        echo ""
+        echo "=== Result: $PASS/5 checks passed ==="
+      args:
+        executable: /bin/bash
+      register: verify_result
+    - debug:
+        msg: "{{ verify_result.stdout_lines }}"

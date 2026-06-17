@@ -1,0 +1,254 @@
+✓ Podman 4.9.3 found
+✓ Ansible 2.16.3 found
+Proceeding...
+Provisioning Redis 7.0.15 — 3 masters, 1 replica(s) per master
+
+PLAY [Provision Redis Cluster Nodes] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [redis-node-2]
+ok: [redis-node-1]
+ok: [redis-node-3]
+ok: [redis-node-5]
+ok: [redis-node-4]
+ok: [redis-node-6]
+
+TASK [redis : Install build dependencies] **************************************
+changed: [redis-node-1]
+changed: [redis-node-2]
+changed: [redis-node-5]
+changed: [redis-node-3]
+changed: [redis-node-4]
+changed: [redis-node-6]
+
+TASK [redis : Download Redis 7.0.15] *******************************************
+changed: [redis-node-1]
+changed: [redis-node-5]
+changed: [redis-node-4]
+changed: [redis-node-2]
+changed: [redis-node-3]
+changed: [redis-node-6]
+
+TASK [redis : Extract Redis] ***************************************************
+changed: [redis-node-2]
+changed: [redis-node-4]
+changed: [redis-node-1]
+changed: [redis-node-5]
+changed: [redis-node-3]
+changed: [redis-node-6]
+
+TASK [redis : Build Redis] *****************************************************
+changed: [redis-node-4]
+changed: [redis-node-2]
+changed: [redis-node-5]
+changed: [redis-node-1]
+changed: [redis-node-3]
+changed: [redis-node-6]
+
+TASK [redis : Install Redis binaries] ******************************************
+changed: [redis-node-1]
+changed: [redis-node-2]
+changed: [redis-node-3]
+changed: [redis-node-5]
+changed: [redis-node-4]
+changed: [redis-node-6]
+
+TASK [redis : Create redis group] **********************************************
+changed: [redis-node-3]
+changed: [redis-node-1]
+changed: [redis-node-5]
+changed: [redis-node-2]
+changed: [redis-node-4]
+changed: [redis-node-6]
+
+TASK [redis : Create redis user] ***********************************************
+changed: [redis-node-2]
+changed: [redis-node-3]
+changed: [redis-node-4]
+changed: [redis-node-5]
+changed: [redis-node-1]
+changed: [redis-node-6]
+
+TASK [redis : Create redis directories] ****************************************
+changed: [redis-node-3] => (item=/etc/redis)
+changed: [redis-node-5] => (item=/etc/redis)
+changed: [redis-node-1] => (item=/etc/redis)
+changed: [redis-node-4] => (item=/etc/redis)
+changed: [redis-node-2] => (item=/etc/redis)
+changed: [redis-node-5] => (item=/var/lib/redis)
+changed: [redis-node-1] => (item=/var/lib/redis)
+changed: [redis-node-3] => (item=/var/lib/redis)
+changed: [redis-node-4] => (item=/var/lib/redis)
+changed: [redis-node-2] => (item=/var/lib/redis)
+changed: [redis-node-6] => (item=/etc/redis)
+changed: [redis-node-6] => (item=/var/lib/redis)
+
+TASK [redis : Deploy Redis cluster config] *************************************
+changed: [redis-node-1]
+changed: [redis-node-4]
+changed: [redis-node-5]
+changed: [redis-node-2]
+changed: [redis-node-3]
+changed: [redis-node-6]
+
+TASK [redis : Stop Redis safely] ***********************************************
+fatal: [redis-node-1]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.014250", "end": "2026-06-17 04:32:15.949277", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:15.935027", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [redis-node-4]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.010861", "end": "2026-06-17 04:32:15.985425", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:15.974564", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [redis-node-2]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.008751", "end": "2026-06-17 04:32:15.983567", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:15.974816", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [redis-node-3]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.008277", "end": "2026-06-17 04:32:15.984711", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:15.976434", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [redis-node-5]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.009584", "end": "2026-06-17 04:32:16.031452", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:16.021868", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+fatal: [redis-node-6]: FAILED! => {"changed": true, "cmd": "pkill -f redis-server || true", "delta": "0:00:00.007796", "end": "2026-06-17 04:32:18.106406", "msg": "non-zero return code", "rc": -15, "start": "2026-06-17 04:32:18.098610", "stderr": "", "stderr_lines": [], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [redis : Wait for port to free] *******************************************
+ok: [redis-node-2]
+ok: [redis-node-3]
+ok: [redis-node-1]
+ok: [redis-node-4]
+ok: [redis-node-5]
+ok: [redis-node-6]
+
+TASK [redis : Start Redis with cluster config] *********************************
+changed: [redis-node-1]
+changed: [redis-node-2]
+changed: [redis-node-4]
+changed: [redis-node-3]
+changed: [redis-node-5]
+changed: [redis-node-6]
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+redis-node-2               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+redis-node-3               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+redis-node-4               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+redis-node-5               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+redis-node-6               : ok=13   changed=11   unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
+
+PLAY [Create Redis Cluster] ****************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [redis-node-1]
+
+TASK [Create Redis Cluster] ****************************************************
+changed: [redis-node-1]
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+PLAY [Redis Cluster Status] ****************************************************
+
+TASK [Print full cluster status] ***********************************************
+changed: [redis-node-3]
+changed: [redis-node-4]
+changed: [redis-node-5]
+changed: [redis-node-2]
+changed: [redis-node-1]
+changed: [redis-node-6]
+
+TASK [Show status] *************************************************************
+ok: [redis-node-1] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.79M",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.84M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.81M",
+        "",
+        "REPLICAS",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.73M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.73M",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.73M"
+    ]
+}
+ok: [redis-node-2] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.81M",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.79M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.81M",
+        "",
+        "REPLICAS",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.73M",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.73M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.79M"
+    ]
+}
+ok: [redis-node-3] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.78M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.81M",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.81M",
+        "",
+        "REPLICAS",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.73M",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.73M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.73M"
+    ]
+}
+ok: [redis-node-4] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.81M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.81M",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.78M",
+        "",
+        "REPLICAS",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.73M",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.73M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.73M"
+    ]
+}
+ok: [redis-node-5] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.79M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.81M",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.81M",
+        "",
+        "REPLICAS",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.73M",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.76M",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.73M"
+    ]
+}
+ok: [redis-node-6] => {
+    "msg": [
+        "Cluster State: ok",
+        "",
+        "MASTERS",
+        " 10.10.0.11:6379 [master] v7.0.15 slots: 0-5460 keys: 0 mem: 1.81M",
+        " 10.10.0.13:6379 [master] v7.0.15 slots: 10923-16383 keys: 0 mem: 1.83M",
+        " 10.10.0.12:6379 [master] v7.0.15 slots: 5461-10922 keys: 0 mem: 1.83M",
+        "",
+        "REPLICAS",
+        " 10.10.0.16:6379 [replica] v7.0.15 replicating: 10.10.0.12:6379 mem: 1.71M",
+        " 10.10.0.15:6379 [replica] v7.0.15 replicating: 10.10.0.11:6379 mem: 1.71M",
+        " 10.10.0.14:6379 [replica] v7.0.15 replicating: 10.10.0.13:6379 mem: 1.72M"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-2               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-3               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-4               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-5               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-6               : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

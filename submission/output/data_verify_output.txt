@@ -1,0 +1,52 @@
+✓ Podman 4.9.3 found
+✓ Ansible 2.16.3 found
+Proceeding...
+
+PLAY [Pre-verify Node Connectivity Check] **************************************
+
+TASK [Check Redis connectivity] ************************************************
+ok: [redis-node-4]
+ok: [redis-node-5]
+ok: [redis-node-2]
+ok: [redis-node-3]
+ok: [redis-node-1]
+ok: [redis-node-6]
+
+TASK [Show per-node connectivity] **********************************************
+ok: [redis-node-1] => {
+    "msg": "redis-node-1 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-2] => {
+    "msg": "redis-node-2 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-3] => {
+    "msg": "redis-node-3 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-4] => {
+    "msg": "redis-node-4 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-5] => {
+    "msg": "redis-node-5 (127.0.0.1) -> PONG"
+}
+ok: [redis-node-6] => {
+    "msg": "redis-node-6 (127.0.0.1) -> PONG"
+}
+
+PLAY [Verify Redis Cluster Data (1000 Keys)] ***********************************
+
+TASK [Verify all 1000 deterministic keys] **************************************
+changed: [redis-node-1]
+
+TASK [debug] *******************************************************************
+ok: [redis-node-1] => {
+    "verify_result.stdout": "PASS - 1000/1000 keys verified"
+}
+
+PLAY RECAP *********************************************************************
+redis-node-1               : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-2               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-3               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-4               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-5               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+redis-node-6               : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

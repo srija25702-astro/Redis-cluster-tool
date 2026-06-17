@@ -1,0 +1,50 @@
+- name: Pre-seed Node Connectivity Check
+  hosts: redis_cluster
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Check Redis connectivity
+      shell: redis-cli -p 6379 PING
+      register: ping_result
+      changed_when: false
+
+    - name: Show per-node connectivity
+      debug:
+        msg: "{{ inventory_hostname }} ({{ ansible_host }}) -> {{ ping_result.stdout }}"
+
+- name: Seed Redis Cluster Data (Deterministic SHA256)
+  hosts: redis-node-1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Insert keys and summarize
+      shell: |
+        PORT=6379
+        success=0
+        fail=0
+        for i in $(seq -w 1 {{ num_keys | default(1000) }}); do
+          key="key:$i"
+          value=$(echo -n "$key" | sha256sum | awk '{print $1}')
+          if redis-cli -c -p $PORT SET "$key" "$value" > /dev/null 2>&1; then
+            success=$((success+1))
+          else
+            fail=$((fail+1))
+          fi
+        done
+        echo "Total keys inserted: $success"
+        echo "Failures: $fail"
+        echo ""
+        echo "Distribution across masters:"
+        redis-cli -p $PORT CLUSTER NODES | grep master | while read -r line; do
+          ip_port=$(echo "$line" | awk '{print $2}' | cut -d@ -f1)
+          ip=$(echo "$ip_port" | cut -d: -f1)
+          port=$(echo "$ip_port" | cut -d: -f2)
+          count=$(redis-cli -h "$ip" -p "$port" DBSIZE | tr -d '\r')
+          echo " $ip:$port -> $count keys"
+        done
+      args:
+        executable: /bin/bash
+      register: seed_result
+    - name: Show seed summary
+      debug:
+        msg: "{{ seed_result.stdout_lines }}"

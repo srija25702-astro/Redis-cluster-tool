@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  redis-node-1:
+    build:
+      context: .
+    container_name: redis-node-1
+    ports:
+      - "2211:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.11
+
+  redis-node-2:
+    build:
+      context: .
+    container_name: redis-node-2
+    ports:
+      - "2212:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.12
+
+  redis-node-3:
+    build:
+      context: .
+    container_name: redis-node-3
+    ports:
+      - "2213:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.13
+
+  redis-node-4:
+    build:
+      context: .
+    container_name: redis-node-4
+    ports:
+      - "2214:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.14
+
+  redis-node-5:
+    build:
+      context: .
+    container_name: redis-node-5
+    ports:
+      - "2215:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.15
+
+  redis-node-6:
+    build:
+      context: .
+    container_name: redis-node-6
+    ports:
+      - "2216:22"
+    networks:
+      redis-net:
+        ipv4_address: 10.10.0.16
+
+networks:
+  redis-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
